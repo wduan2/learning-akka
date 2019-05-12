@@ -5,17 +5,34 @@ import akka.actor.{Actor, ActorSystem, Props}
 import scala.io.StdIn
 
 
-// configuration object using in creating an actor
-object PrintMyActorRefActor {
-  def props: Props = Props(new PrintMyActorRefActor)
+object StartStopActor {
+  def props: Props = Props(new StartStopActor)
 }
 
-class PrintMyActorRefActor extends Actor {
+class StartStopActor extends Actor {
+  override def preStart(): Unit = println(s"$self pre start")
+  override def postStop(): Unit = println(s"$self post stop")
+  override def receive: Receive = Actor.emptyBehavior
+}
+
+// configuration object using in creating an actor
+object MasterActor {
+  def props: Props = Props(new MasterActor)
+}
+
+class MasterActor extends Actor {
+  override def preStart(): Unit = {
+    println(s"$self pre start")
+    context.actorOf(StartStopActor.props, "master-pre-start")
+  }
+
+  override def postStop(): Unit = println(s"$self post stop")
+
   override def receive: Receive = {
-    case "printit" =>
+    case "create" =>
       // create an actor and inject it into the existing tree
-      val secondRef = context.actorOf(Props.empty, "second-actor")
-      println(s"Second: $secondRef")
+      context.actorOf(StartStopActor.props, "master-receive")
+    case "stop" => context.stop(self)
   }
 }
 
@@ -23,12 +40,14 @@ object ActorHierarchyExperiments extends App {
   val system = ActorSystem("testSystem")
 
   // the creator actor
-  val firstRef = system.actorOf(PrintMyActorRefActor.props, "first-actor")
-  println(s"First: $firstRef")
-  firstRef ! "printit"
+  val masterRef = system.actorOf(MasterActor.props, "master")
+
+  masterRef ! "create"
 
   println(">>> Press ENTER to exit <<<")
+
   try StdIn.readLine()
   finally system.terminate()
+
   println(">>> Actor system terminated <<<")
 }
