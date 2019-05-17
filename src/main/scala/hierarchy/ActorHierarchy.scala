@@ -1,4 +1,4 @@
-package learning
+package hierarchy
 
 import akka.actor.{Actor, ActorSystem, Props}
 
