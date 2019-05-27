@@ -2,13 +2,12 @@ package device
 
 import akka.actor.ActorSystem
 import akka.testkit.TestProbe
-import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
+import org.scalatest.{FlatSpec, Matchers}
 
 import scala.concurrent.duration._
 
 class DeviceSpec extends FlatSpec
-  with Matchers
-  with BeforeAndAfterAll {
+  with Matchers {
 
   // TODO: find out why extending the AkkaTestKit make the test case can not be recognized
   implicit val system: ActorSystem = ActorSystem("test")
