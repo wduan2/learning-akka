@@ -8,8 +8,8 @@ object Device {
   def props(groupId: String, deviceId: String): Props = Props(new Device(groupId, deviceId))
 
   /**
-   * Define the message objects
-   */
+    * Define the message objects
+    */
   final case class RecordTemperature(requestId: Long, value: Double)
 
   final case class TemperatureRecorded(requestId: Long)
