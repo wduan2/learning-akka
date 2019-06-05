@@ -1,8 +1,9 @@
 package device
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
-import device.DeviceGroup.{ReplyDeviceList, RequestDeviceList}
 import device.DeviceManager.RequestTrackDevice
+
+import scala.concurrent.duration._
 
 object DeviceGroup {
   def props(groupId: String): Props = Props(new DeviceGroup(groupId))
@@ -11,9 +12,26 @@ object DeviceGroup {
 
   final case class ReplyDeviceList(requestId: Long, ids: Set[String])
 
+  sealed trait TemperatureReading
+
+  final case class Temperature(value: Double) extends TemperatureReading
+
+  case object TemperatureNotAvailable extends TemperatureReading
+
+  case object DeviceNotAvailable extends TemperatureReading
+
+  case object DeviceTimedOut extends TemperatureReading
+
+  final case class RequestAllTemperatures(requestId: Long)
+
+  final case class RespondAllTemperatures(requestId: Long, temperatures: Map[String, TemperatureReading])
+
 }
 
 class DeviceGroup(groupId: String) extends Actor with ActorLogging {
+
+  import device.DeviceGroup.{ReplyDeviceList, RequestAllTemperatures, RequestDeviceList}
+
   var deviceIdToActor = Map.empty[String, ActorRef]
 
   // the 'Terminated' message only contains the 'ActorRef', to be able to update
@@ -47,5 +65,9 @@ class DeviceGroup(groupId: String) extends Actor with ActorLogging {
       log.info("Device actor for {} has been terminated", deviceId)
       actorToDeviceId -= deviceActor
       deviceIdToActor -= deviceId
+    case RequestAllTemperatures(requestId) =>
+      context.actorOf(
+        DeviceGroupQuery.props(actorToDeviceId = actorToDeviceId, requestId = requestId, requester = self, 3.seconds)
+      )
   }
 }
